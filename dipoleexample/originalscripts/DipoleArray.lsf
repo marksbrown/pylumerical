@@ -1,0 +1,153 @@
+deleteall;
+###########################################
+##	Dipole Array	      ##
+## FarField electric field (in spherical ##
+## and cartesian coordinates) is found   ##
+## for a given 2D array of NxM dipoles   ##
+##			      ##
+## Author : Mark S. Brown	      ## 
+## Started : 31st July 2013              ##
+## Bug fix Thurs 12th Sept               ##
+## Power monitor incorrectly placed	      ##
+###########################################
+
+?"Executing Dipole Array Generation File";
+
+#constants
+Degrees = pi/180; 
+nm = 1e-9;
+
+#tags below used to find (and update)
+#parameters as we choose to
+redrawoff; #speeds up creation time ALOT
+#<variables>#
+#</variables>#
+
+for (a=N01:N11){
+ for (b=N02:N12){
+   adddipole;
+   select("source");
+   set("name","dipole_"+num2str(a)+"_"+num2str(b));
+   set("x",a*LX+b*LY*cos(BravaisTheta*Degrees));
+   set("y",b*LY*sin(BravaisTheta*Degrees));
+  } 
+}
+
+selectall; #sets orientation of dipoles
+set("theta",theta);
+set("phi",phi);
+unselectall;
+
+##Total region size
+xmin = N01*LX+N02*LY*cos(BravaisTheta*Degrees)-MonitorMargin;
+xmax = N11*LX+N12*LY*cos(BravaisTheta*Degrees)+MonitorMargin;
+
+ymin = N02*LY*sin(BravaisTheta*Degrees)-MonitorMargin;
+ymax = N12*LY*sin(BravaisTheta*Degrees)+MonitorMargin;
+
+zmin = -MonitorMargin;
+zmax = MonitorMargin;
+
+addfdtd;
+select("FDTD");
+set("x",0); #centering
+set("y",0);
+set("z",0);
+
+set("x min",xmin-MarginXY);
+set("x max",xmax+MarginXY);
+set("y min",ymin-MarginXY);
+set("y max",ymax+MarginXY);
+set("z min",zmin-MarginZ);
+set("z max",zmax+MarginZ);
+
+
+set("USE EARLY SHUTOFF",1); #testing a theory
+set("auto shutoff min",1e-11);
+set("mesh accuracy",4);
+
+#Generate Single Monitor
+##X
+#x1
+if (MonitorLoc==0){
+addprofile;
+select("monitor");
+set("name","PowerMonitor");
+set("output power",1);
+set("monitor type","2D X-normal");
+set("x",xmax);
+set("y min",ymin-MarginXY);
+set("y max",ymax+MarginXY);
+set("z min",zmin-MarginZ);
+set("z max",zmax+MarginZ);#set("z span",zspan+2*Margin);
+}
+#x2
+if (MonitorLoc==1){
+addprofile;
+select("monitor");
+set("name","PowerMonitor");
+set("output power",1);
+set("monitor type","2D X-normal");
+set("x",xmin);
+set("y min",ymin-MarginXY);
+set("y max",ymax+MarginXY);
+set("z min",zmin-MarginZ);
+set("z max",zmax+MarginZ);
+}
+##Y
+#y1
+if (MonitorLoc==2){
+addprofile;
+select("monitor");
+set("name","PowerMonitor");
+set("output power",1);
+set("monitor type","2D Y-normal");
+set("y",ymax);
+set("x min",xmin-MarginXY);
+set("x max",xmax+MarginXY);
+set("z min",zmin-MarginZ);
+set("z max",zmax+MarginZ);
+}
+#y2
+if (MonitorLoc==3){
+addprofile;
+select("monitor");
+set("name","PowerMonitor");
+set("output power",1);
+set("monitor type","2D Y-normal");
+set("y",ymin);
+set("x min",xmin-MarginXY);
+set("x max",xmax+MarginXY);
+set("z min",zmin-MarginZ);
+set("z max",zmax+MarginZ);
+}
+##Z
+#z1
+if (MonitorLoc==4){
+addprofile;
+select("monitor");
+set("name","PowerMonitor");
+set("output power",1);
+set("monitor type","2D Z-normal");
+set("z",xmax);
+set("x min",xmin-MarginXY);
+set("x max",xmax+MarginXY);
+set("y min",ymin-MarginXY);
+set("y max",ymax+MarginXY);
+}
+#z2
+if (MonitorLoc==5){
+addprofile;
+select("monitor");
+set("name","PowerMonitor");
+set("output power",1);
+set("monitor type","2D Z-normal");
+set("z",xmin);
+set("x min",xmin-MarginXY);
+set("x max",xmax+MarginXY);
+set("y min",ymin-MarginXY);
+set("y max",ymax+MarginXY);
+}
+
+redrawon;
+

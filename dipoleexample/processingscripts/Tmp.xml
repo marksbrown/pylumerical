@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Tmp" tests="1" failures="0" errors="1">
+    <testcase name="/home/mbrown/Desktop/Dropbox/PythonFiles/Lumerical/pylumerical/dipoleexample/processingscripts/Tmp.lsf">
+        <error result="error" message="in farfieldux, the requested monitor with the necessary data cannot be found." buffer="/home/mbrown/Desktop/Dropbox/PythonFiles/Lumerical/pylumerical/dipoleexample/processingscripts/Tmp.lsf" file="/home/mbrown/Desktop/Dropbox/PythonFiles/Lumerical/pylumerical/dipoleexample/processingscripts/Tmp.lsf" line="10"/>
+    </testcase>
+</testsuite>

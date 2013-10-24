@@ -1,0 +1,39 @@
+##Saves Electric field information
+#<variables>#
+Monitor = 'PowerMonitor';
+Savefullpath = '/tmp/lumerical/output/DipoleArray_y_0.fsp';
+#</variables>#
+
+
+if(layoutmode==0){
+    # project in spherical (polar) coordinate system
+    ux = farfieldux(Monitor);
+    uy = farfielduy(Monitor);
+
+    E = farfieldpolar3d(Monitor);
+
+    Er = pinch(E,3,1);
+    Etheta = pinch(E,3,2);
+    Ephi = pinch(E,3,3);
+
+    ##Output files
+    format long;
+
+    outfile= Savefullpath+"_farfield"+"_ux.csv";
+    write(outfile,num2str(ux));
+
+    outfile= Savefullpath+"_farfield"+"_uy.csv";
+    write(outfile,num2str(uy));
+
+    outfile= Savefullpath+"_farfield"+"_Er.csv";
+    write(outfile,num2str(abs(Er)));
+
+    outfile= Savefullpath+"_farfield"+"_Etheta.csv";
+    write(outfile,num2str(abs(Etheta)));
+
+    outfile= Savefullpath+"_farfield"+"_Ephi.csv";
+    write(outfile,num2str(abs(Ephi)));
+}else{
+?"No data to analysis in this fsp file!";
+}
+exit(2);

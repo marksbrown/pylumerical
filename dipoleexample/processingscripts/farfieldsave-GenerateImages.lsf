@@ -1,0 +1,28 @@
+##Saves Electric field information
+#<variables>#
+Monitor = "PowerMonitor";
+KeyWord = filebasename(currentfilename);
+#</variables>#
+
+
+# project in spherical (polar) coordinate system
+ux = farfieldux(Monitor);
+uy = farfielduy(Monitor);
+
+E = farfieldpolar3d(Monitor);
+
+Er = pinch(E,3,1);
+Etheta = pinch(E,3,2);
+Ephi = pinch(E,3,3);
+
+##Output files
+format long;
+
+#image(ux,uy,abs(Er),"","","|Er|","polar");
+#image(ux,uy,abs(Etheta),"","","|Etheta|","polar");
+#image(ux,uy,abs(Ephi),"","","|Ephi|","polar");
+
+E2 = Er^2+Etheta^2+Ephi^2;
+E2 = E2 / max(E2);
+
+image(ux,uy,abs(E2),"ux","uy","|E|^2");
