@@ -37,8 +37,7 @@ See http://docs.lumerical.com/en/fdtd/knowledge_base.html for many examples of s
 Parameter Sweep Example
 -----------------------
 
-```
-
+```python
 import pylumerical as pyl
 nm = 1e-9
 
