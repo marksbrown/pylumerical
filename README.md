@@ -1,6 +1,8 @@
 pylumerical
 ===========
 
+Last Altered : 30th October 2013
+
 Python module to work with FDTD software - Lumerical.
 
 Outline
