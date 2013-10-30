@@ -2,6 +2,7 @@
 #<variables>#
 #</variables>#
 
+system("rm -f "+Savefullpath+"*"); #clears output directory
 
 if(layoutmode==0){
     # project in spherical (polar) coordinate system
