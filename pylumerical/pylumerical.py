@@ -114,6 +114,10 @@ def __GeneratenewLSF(root, lsf, variables, verbose=0):
                 aparam = int(variables[akey])
             elif isinstance(variables[akey], str):
                 aparam = "'" + variables[akey] + "'"
+            elif isinstance(variables[akey], int):
+                aparam = int(variables[akey])
+            elif isinstance(variables[akey], float):
+                aparam = float(variables[akey])
             else:
                 if verbose > 0:
                     print("unknown type!",type(variables[akey]))
