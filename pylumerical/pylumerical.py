@@ -115,7 +115,10 @@ def __GeneratenewLSF(root, lsf, variables, verbose=0):
             elif isinstance(variables[akey], str):
                 aparam = "'" + variables[akey] + "'"
             else:
-                aparam = variables[akey]
+                if verbose > 0:
+                    print("unknown type!",type(variables[akey]))
+                aparam = "'" + variables[akey] + "'"
+                ##TODO make code work properly with python3 unicode
 
             newline = akey + " = " + str(aparam) + ";\n"
             if verbose > 0:
