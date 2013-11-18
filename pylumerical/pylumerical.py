@@ -14,25 +14,37 @@ from __future__ import print_function, division
 import os
 
 
+def SetupEnvironment(workingdir, akeyword, verbose=0):
+    '''
+    Creates input, processing and output folders
+    '''
+    keyword = lambda adir : os.path.join(adir,akeyword)
+    lsfloc = full(keyword('input'),workingdir,verbose=verbose) #input
+    fsploc = full(keyword('fsp'),workingdir,verbose=verbose) #inbetween
+    dataloc = full(keyword('output'),workingdir,verbose=verbose) #output
+    
+    return lsfloc, fsploc, dataloc
+
+def lsftogenerate(newparams, defaultparams):
+    '''
+    Returns dict of parameters along with unique name determined by given parameters
+    '''
+    uniquename = ""
+    for key in newparams:
+        uniquename+="-".join([str(key),str(newparams[key])])+'_'
+    
+    newparams = dict(defaultparams.items()+newparams.items())
+    return [uniquename, newparams]
+
 def full(adir, workingdir, verbose=0):
     '''
     Gets full directory (creates folder if it doesn't already exist)
     '''
 
-    if not os.path.exists(workingdir):
-        if verbose > 1:
-            print("Creating working directory")
-        os.mkdir(workingdir)
-
     fullpath = os.path.join(workingdir, adir)
-
-    if verbose > 0:
-        print(fullpath)
     if not os.path.exists(fullpath):
-        if verbose > 1:
-            print("Creating full path")
-        os.mkdir(fullpath)
-
+        os.makedirs(fullpath)        
+    
     return fullpath
 
 # /typecast##
