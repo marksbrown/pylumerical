@@ -25,13 +25,13 @@ def SetupEnvironment(workingdir, akeyword, verbose=0):
     
     return lsfloc, fsploc, dataloc
 
-def lsftogenerate(newparams, defaultparams):
+def lsftogenerate(newparams, defaultparams, sep='-'):
     '''
     Returns dict of parameters along with unique name determined by given parameters
     '''
     uniquename = ""
     for key in newparams:
-        uniquename+="-".join([str(key),str(newparams[key])])+'_'
+        uniquename+="_".join([str(key),str(newparams[key])])+sep
     
     newparams = dict(defaultparams.items()+newparams.items())
     return [uniquename, newparams]
