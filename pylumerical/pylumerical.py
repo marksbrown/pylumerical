@@ -25,13 +25,17 @@ def SetupEnvironment(workingdir, akeyword, verbose=0):
     
     return lsfloc, fsploc, dataloc
 
-def lsftogenerate(newparams, defaultparams, sep='-'):
+def uniquedictstring(adict):
+    '''
+    Turns dictionary into unique name
+    '''
+    return "_".join("{0}={1}".format(key,data) for key,data in adict.iteritems())
+
+def lsftogenerate(newparams, defaultparams):
     '''
     Returns dict of parameters along with unique name determined by given parameters
     '''
-    uniquename = ""
-    for key in newparams:
-        uniquename+="_".join([str(key),str(newparams[key])])+sep
+    uniquename = uniquedictstring(newparams)
     
     newparams = dict(defaultparams.items()+newparams.items())
     return [uniquename, newparams]
