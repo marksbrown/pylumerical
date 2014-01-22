@@ -13,7 +13,6 @@
 from __future__ import print_function, division
 import os
 
-
 def SetupEnvironment(workingdir, akeyword, verbose=0):
     '''
     Creates input, processing and output folders
@@ -29,7 +28,8 @@ def uniquedictstring(adict):
     '''
     Turns dictionary into unique name
     '''
-    return "_".join("{0}={1}".format(key,data) for key,data in adict.iteritems())
+    uniquename = "_".join("{0}={1}".format(key,data) for key,data in adict.iteritems())
+    return uniquename.replace('.',',')
 
 def lsftogenerate(newparams, defaultparams):
     '''
@@ -182,7 +182,7 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
         return
 
     newlsf = __GeneratenewLSF(root, lsf, variables, verbose=verbose)
-    newlsf.write("cd('" + fsploc + "');\n")
+    newlsf.write("\ncd('" + fsploc + "');\n")
     newlsf.write("save('" + fspname + "');\n")
 
 #    if len(scriptloc) > 0:
