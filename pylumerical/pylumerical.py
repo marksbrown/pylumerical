@@ -237,6 +237,34 @@ def ExecuteFSPfiles(fsploc, cores=8, verbose=0):
 
     return os.system(ExecFSP)
 
+def ExecuteFSPfilesParallel(fsploc, verbose=0, **kwargs):
+    '''
+    Uses mpiexec command to run large simulations across multiple pcs
+    '''
+
+    hosts = kwargs.get('hosts',[('tinker',8), ('clemens',8), ('sienna',8)])
+    ext = kwargs.get("address",".ee.ucl.ac.uk")    
+    ExecLumerical = kwargs.get('lumerical', 'fdtd-solutions')
+    logall = kwargs.get("logall",True)
+
+    absolutepath = kwargs.get('abspath',False)
+    if absolutepath:
+        ExecFSP = '/opt/lumerical/fdtd/mpich2/nemesis/bin/mpiexec'
+    else:
+        ExecFSP = 'mpiexec'
+
+    formathosts = ["{0}{1}".format(nm, ext) for nm, pr in hosts]    
+    hoststring = " ".join(formathosts)
+    
+    if logall:
+        ExecFSP = " ".join([ExecFSP,"-hosts","-n 8",hoststring,ExecLumerical,
+                            "-logall",os.path.join(fsploc, "*.fsp")])
+    else:
+        ExecFSP = " ".join([ExecFSP,"-hosts",hoststring,ExecLumerical,
+                            os.path.join(fsploc, "*.fsp")])
+    if verbose > 0:
+        print(ExecFSP)
+    return os.system(ExecFSP)   
 
 def ExecuteScriptOnFSP(fsp, script, verbose=0, **kwargs):
     '''
