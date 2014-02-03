@@ -219,7 +219,7 @@ def GenerateFSPinput(lsf, verbose=0, **kwargs):
     return os.system(ExecLumerical)
 
 
-def ExecuteFSPfiles(fsploc, cores=8, verbose=0):
+def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
     '''
     Executes all fsp files in _fsploc_
 
@@ -235,36 +235,25 @@ def ExecuteFSPfiles(fsploc, cores=8, verbose=0):
     if verbose > 0:
         print(ExecFSP)
 
-    return os.system(ExecFSP)
-
-def ExecuteFSPfilesParallel(fsploc, verbose=0, **kwargs):
-    '''
-    Uses mpiexec command to run large simulations across multiple pcs
-    '''
-
-    hosts = kwargs.get('hosts',[('tinker',8), ('clemens',8), ('sienna',8)])
-    ext = kwargs.get("address",".ee.ucl.ac.uk")    
-    ExecLumerical = kwargs.get('lumerical', 'fdtd-solutions')
-    logall = kwargs.get("logall",True)
-
-    absolutepath = kwargs.get('abspath',False)
-    if absolutepath:
-        ExecFSP = '/opt/lumerical/fdtd/mpich2/nemesis/bin/mpiexec'
+    if execute:
+        return os.system(ExecFSP)
     else:
-        ExecFSP = 'mpiexec'
+        return ExecFSP
 
-    formathosts = ["{0}{1}".format(nm, ext) for nm, pr in hosts]    
-    hoststring = " ".join(formathosts)
+from fabric.api import *
+from fabric.contrib.console import confirm
+
+env.hosts = ['tinker.ee.ucl.ac.uk', 'clemens.ee.ucl.ac.uk', 'sienna.ee.ucl.ac.uk']
+
+def ExecuteFSPfilesRemote(fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
+    '''
+    This will execute all the given fsp files on a remote machine using the
+    _ExecuteFSPfiles_ command above
+    '''
+
+    acmd = "/bin/nice -n {0:.0f} {1}".format(nicelvl,ExecuteFSPfiles(fsploc, cores, execute=False, verbose=verbose))
     
-    if logall:
-        ExecFSP = " ".join([ExecFSP,"-hosts","-n 8",hoststring,ExecLumerical,
-                            "-logall",os.path.join(fsploc, "*.fsp")])
-    else:
-        ExecFSP = " ".join([ExecFSP,"-hosts",hoststring,ExecLumerical,
-                            os.path.join(fsploc, "*.fsp")])
-    if verbose > 0:
-        print(ExecFSP)
-    return os.system(ExecFSP)   
+    return run(acmd)
 
 def ExecuteScriptOnFSP(fsp, script, verbose=0, **kwargs):
     '''
