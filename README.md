@@ -50,14 +50,11 @@ Processing lsf Structure
 
         <Processing Script Details Here!>
 
-        }else{
-    ?"No data to analysis in this fsp file!";
+    }else{
+        ?"No data to analysis in this fsp file!";
     }
     exit(2);
-<<<<<<< HEAD
 ```
-=======
->>>>>>> 15d4113903d642d49fa71662dc5d241c756e9420
 
 In this we've chosen to always output csv files to _SaveFullpath_ which will be added to the processing script automatically.
 
