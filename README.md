@@ -14,8 +14,8 @@ Pylumerical is a a Python module to alter and execute _Lumerical_ lsf scripts. T
 2. Execute valid _.fsp_ files using Engine licence(s) using MPI.
 3. Execute processing _.lsf_ scripts upon completed simulation _.fsp_ files
 
-Usage
------
+Original lsf Structure
+----------------------
 First we need to design a simulation using FDTD-Solutions. The script file should take the form :
 
 ```
@@ -34,6 +34,29 @@ First we need to design a simulation using FDTD-Solutions. The script file shoul
     
 ```
 Any variables which define the simulation should be placed between the tags. The deleteall command ensures a clean environment before generation. _redrawoff_ and _redrawon_ dramatically speed up the fsp generation time as the GUI is not wasting time drawing the 3D simulation.
+
+Processing lsf Structure
+------------------------
+
+```
+    #Description of processing script
+    #<variables>#
+    ...
+    #</variables>#
+
+    system("rm -f "+Savefullpath+"*"); #clears output directory
+
+    if(layoutmode==0){
+
+        <Processing Script Details Here!>
+
+        }else{
+    ?"No data to analysis in this fsp file!";
+    }
+    exit(2);
+
+In this we've chosen to always output csv files to _SaveFullpath_ which will be added to the processing script automatically.
+
 
 Parameter Sweep Example
 -----------------------
