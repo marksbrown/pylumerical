@@ -18,13 +18,26 @@ def SetupEnvironment(workingdir, akeyword, verbose=0):
     '''
     Creates input, processing and output folders
     '''
-    keyword = lambda adir: os.path.join(adir, akeyword)
-    lsfloc = full(keyword('input'), workingdir, verbose=verbose)  # input
-    fsploc = full(keyword('fsp'), workingdir, verbose=verbose)  # inbetween
-    dataloc = full(keyword('output'), workingdir, verbose=verbose)  # output
+    keyword = lambda adir: os.path.join(akeyword, adir)
+    lsfloc = full(workingdir, keyword('input'), verbose=verbose)  # input
+    fsploc = full(workingdir, keyword('fsp'), verbose=verbose)  # inbetween
+    dataloc = full(workingdir, keyword('output'), verbose=verbose)  # output
 
     return lsfloc, fsploc, dataloc
 
+def full(workingdir, adir, verbose=0):
+    '''
+    Gets full directory (creates folder if it doesn't already exist)
+    '''
+
+    fullpath = os.path.join(workingdir, adir)
+
+    if verbose > 0:
+        print("Does",fullpath, "Exist?")
+    if not os.path.exists(fullpath):
+        os.makedirs(fullpath)
+
+    return fullpath
 
 def _uniquedictstring(adict):
     '''
@@ -43,18 +56,6 @@ def lsftogenerate(newparams, defaultparams):
 
     newparams = dict(defaultparams.items() + newparams.items())
     return [uniquename, newparams]
-
-
-def full(adir, workingdir, verbose=0):
-    '''
-    Gets full directory (creates folder if it doesn't already exist)
-    '''
-
-    fullpath = os.path.join(workingdir, adir)
-    if not os.path.exists(fullpath):
-        os.makedirs(fullpath)
-
-    return fullpath
 
 # /typecast##
 # http://stackoverflow.com/questions/7019283/automatically-type-cast-parameters-in-python
