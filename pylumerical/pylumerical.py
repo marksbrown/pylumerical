@@ -13,6 +13,7 @@
 from __future__ import print_function, division
 import itertools
 import os
+from subprocess import check_output
 
 
 def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, verbose=0):
@@ -66,7 +67,7 @@ def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
         print(ExecFSP)
 
     if execute:
-        return os.system(ExecFSP)
+        return check_output(ExecFSP, shell=True)
     else:
         return ExecFSP
 
@@ -74,8 +75,7 @@ def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
 try:
     from fabric.api import run
 
-    def ExecuteFSPfilesRemote(
-            fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
+    def ExecuteFSPfilesRemote(fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
         '''
         This will execute all the given fsp files on a remote machine using the
         _ExecuteFSPfiles_ command above
@@ -373,6 +373,6 @@ def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
         print(toexec)
 
     if execute:
-        return os.system(toexec)
+        return check_output(toexec, shell=True)
     else:
         return toexec
