@@ -11,7 +11,123 @@
 """
 
 from __future__ import print_function, division
+import itertools
 import os
+
+
+def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, verbose=0):
+        
+    '''
+    Parameter Sweep for FDTD-Solutions
+
+    workingdir : location to place input, fsp and output folders
+    keyword : identifier of parameter sweep for you convenience
+    newparams : list of parameters (see _GenerateParameterSweepDict_ function) we wish to iterate over
+    defaultparmas : default dictionary of every parameter needed
+    script : (scriptloc, scriptname) of original FDTD-Solutions lsf script we wish to modify
+    execute : should the generated files we executed locally immediately?
+    '''
+    lsfloc, fsploc, dataloc = SetupEnvironment(
+        workingdir, keyword, verbose=verbose)
+
+    lsffiles = GenerateParameterSweepDictionary(
+        newparams, defaultparams, verbose=verbose)
+
+    for lsfname, parameters in lsffiles:
+        if verbose > 0:
+            print(lsfname)
+        lsf = (lsfloc, lsfname)
+        fsp = (fsploc, lsfname)
+        GenerateLSFinput(script, lsf, fsp, parameters, verbose=verbose)
+        GenerateFSPinput(lsf, verbose=verbose)
+
+        if any([afile.endswith('xml') for afile in os.listdir(lsfloc)]):
+            raise ValueError(
+                "lsf file : " +
+                lsfname +
+                " is not correct. Check error in input directory.")
+
+    return fsploc, dataloc
+
+
+def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
+    '''
+    Executes all fsp files in _fsploc_
+
+    TODO - Get code to work properly for a list of lsffiles
+
+    see : http://docs.lumerical.com/en/fdtd/user_guide_run_linux_fdtd_command_line_multi.html
+    '''
+
+    ExecFSP = "fdtd-run-local.sh -n " + \
+        str(cores) + ' ' + os.path.join(fsploc, "*.fsp")
+
+    if verbose > 0:
+        print(ExecFSP)
+
+    if execute:
+        return os.system(ExecFSP)
+    else:
+        return ExecFSP
+
+
+try:
+    from fabric.api import run
+
+    def ExecuteFSPfilesRemote(
+            fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
+        '''
+        This will execute all the given fsp files on a remote machine using the
+        _ExecuteFSPfiles_ command above
+        '''
+
+        acmd = "/bin/nice -n {0:.0f} {1}".format(
+            nicelvl,
+            ExecuteFSPfiles(fsploc,
+                            cores,
+                            execute=False,
+                            verbose=verbose))
+
+        return run(acmd)
+
+except ImportError:
+    print("Fabric is not found, ignoring ...")
+
+
+def ProcessGenerated(fsploc, outputloc, processingloc,
+                     processingscript, scriptparams={}, verbose=0):
+    '''
+    Apply processing script to fsp file that has successfully run through FDTD-solutions
+    '''
+    for fspname in os.listdir(fsploc):
+        if not fspname.endswith("fsp"):
+            continue
+
+        if verbose > 0:
+            print("Processing", fspname)
+
+        variables = dict(
+            {'Savefullpath': os.path.join(outputloc, fspname)}.items() + scriptparams.items())
+
+        if verbose > 0:
+            print(variables)
+
+        # cuts off .fsp from filename
+        fullpath = os.path.join(fsploc, fspname.split('.')[0])
+        tmpscript = (processingloc, 'TemporaryScript')
+
+        AlterVariables(
+            (processingloc,
+             processingscript),
+            tmpscript,
+            variables,
+            verbose=0)
+
+        fsp = (fsploc, fspname)
+        Success = ExecuteScriptOnFSP(fsp, tmpscript, verbose=0)
+
+        if verbose > 0:
+            print(fspname, "returns with code", Success)
 
 
 def SetupEnvironment(workingdir, akeyword, verbose=0):
@@ -25,6 +141,7 @@ def SetupEnvironment(workingdir, akeyword, verbose=0):
 
     return lsfloc, fsploc, dataloc
 
+
 def full(workingdir, adir, verbose=0):
     '''
     Gets full directory (creates folder if it doesn't already exist)
@@ -32,12 +149,25 @@ def full(workingdir, adir, verbose=0):
 
     fullpath = os.path.join(workingdir, adir)
 
-    if verbose > 0:
-        print("Does",fullpath, "Exist?")
     if not os.path.exists(fullpath):
         os.makedirs(fullpath)
 
     return fullpath
+
+
+def GenerateParameterSweepDictionary(newparams, defaultparams, verbose=0):
+    '''
+    This will return the dictionary ready for insertion into the lsf file
+    newparms should have have format [(parameter_name1, values1),(parameter_name2, values2),...]
+    '''
+    names, parameters = zip(*newparams)
+    newparamdict = [dict(zip(names, item))
+                    for item in itertools.product(*parameters)]
+
+    return (
+        [lsftogenerate(override, defaultparams) for override in newparamdict]
+    )
+
 
 def _uniquedictstring(adict):
     '''
@@ -223,50 +353,6 @@ def GenerateFSPinput(lsf, verbose=0, **kwargs):
         print("calling :", ExecLumerical)
 
     return os.system(ExecLumerical)
-
-
-def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
-    '''
-    Executes all fsp files in _fsploc_
-
-    TODO - Get code to work properly for a list of lsffiles
-
-    see : http://docs.lumerical.com/en/fdtd/user_guide_run_linux_fdtd_command_line_multi.html
-    '''
-
-    ExecFSP = "fdtd-run-local.sh -n " + \
-        str(cores) + ' ' + os.path.join(fsploc, "*.fsp")
-
-    if verbose > 0:
-        print(ExecFSP)
-
-    if execute:
-        return os.system(ExecFSP)
-    else:
-        return ExecFSP
-
-
-try:
-    from fabric.api import run
-
-    def ExecuteFSPfilesRemote(
-            fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
-        '''
-        This will execute all the given fsp files on a remote machine using the
-        _ExecuteFSPfiles_ command above
-        '''
-
-        acmd = "/bin/nice -n {0:.0f} {1}".format(
-            nicelvl,
-            ExecuteFSPfiles(fsploc,
-                            cores,
-                            execute=False,
-                            verbose=verbose))
-
-        return run(acmd)
-
-except ImportError:
-    print("Fabric is not found, ignoring ...")
 
 
 def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
