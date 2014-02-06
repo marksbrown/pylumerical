@@ -1,5 +1,7 @@
 ##Saves Electric field information
 #<variables>#
+Savefullpath = '/tmp/lumerical/MarginVary/output/MonitorLoc=2_MarginXY=2e-07.fsp';
+Monitor = 'PowerMonitor';
 #</variables>#
 
 system("rm -f "+Savefullpath+"*"); #clears output directory
@@ -35,3 +37,4 @@ if(layoutmode==0){
 }else{
 ?"No data to analysis in this fsp file!";
 }
+exit(2);
