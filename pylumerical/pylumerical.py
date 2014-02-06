@@ -13,32 +13,37 @@
 from __future__ import print_function, division
 import os
 
+
 def SetupEnvironment(workingdir, akeyword, verbose=0):
     '''
     Creates input, processing and output folders
     '''
-    keyword = lambda adir : os.path.join(adir,akeyword)
-    lsfloc = full(keyword('input'),workingdir,verbose=verbose) #input
-    fsploc = full(keyword('fsp'),workingdir,verbose=verbose) #inbetween
-    dataloc = full(keyword('output'),workingdir,verbose=verbose) #output
-    
+    keyword = lambda adir: os.path.join(adir, akeyword)
+    lsfloc = full(keyword('input'), workingdir, verbose=verbose)  # input
+    fsploc = full(keyword('fsp'), workingdir, verbose=verbose)  # inbetween
+    dataloc = full(keyword('output'), workingdir, verbose=verbose)  # output
+
     return lsfloc, fsploc, dataloc
 
-def uniquedictstring(adict):
+
+def _uniquedictstring(adict):
     '''
     Turns dictionary into unique name
     '''
-    uniquename = "_".join("{0}={1}".format(key,data) for key,data in adict.iteritems())
-    return uniquename.replace('.',',')
+    uniquename = "_".join("{0}={1}".format(key, data)
+                          for key, data in adict.iteritems())
+    return uniquename.replace('.', ',')
+
 
 def lsftogenerate(newparams, defaultparams):
     '''
     Returns dict of parameters along with unique name determined by given parameters
     '''
-    uniquename = uniquedictstring(newparams)
-    
-    newparams = dict(defaultparams.items()+newparams.items())
+    uniquename = _uniquedictstring(newparams)
+
+    newparams = dict(defaultparams.items() + newparams.items())
     return [uniquename, newparams]
+
 
 def full(adir, workingdir, verbose=0):
     '''
@@ -47,8 +52,8 @@ def full(adir, workingdir, verbose=0):
 
     fullpath = os.path.join(workingdir, adir)
     if not os.path.exists(fullpath):
-        os.makedirs(fullpath)        
-    
+        os.makedirs(fullpath)
+
     return fullpath
 
 # /typecast##
@@ -107,7 +112,7 @@ def GetCurrentParameters(root, verbose=0, **kwargs):
             params.append(aline.split(' = '))
 
 
-def __GeneratenewLSF(root, lsf, variables, verbose=0):
+def _GeneratenewLSF(root, lsf, variables, verbose=0):
     '''
     Updates parameters in variable section and returns new file
 
@@ -136,9 +141,9 @@ def __GeneratenewLSF(root, lsf, variables, verbose=0):
                 aparam = float(variables[akey])
             else:
                 if verbose > 0:
-                    print("unknown type!",type(variables[akey]))
+                    print("unknown type!", type(variables[akey]))
                 aparam = "'" + variables[akey] + "'"
-                ##TODO make code work properly with python3 unicode
+                # TODO make code work properly with python3 unicode
 
             newline = akey + " = " + str(aparam) + ";\n"
             if verbose > 0:
@@ -155,7 +160,7 @@ def AlterVariables(root, lsf, variables, verbose=0):
     old variables WILL be removed
     '''
 
-    newlsf = __GeneratenewLSF(root, lsf, variables, verbose=verbose)
+    newlsf = _GeneratenewLSF(root, lsf, variables, verbose=verbose)
     newlsf.write("exit(2);\n")
     newlsf.close()
 
@@ -181,7 +186,7 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
         print("lsf location doesn't exist!")
         return
 
-    newlsf = __GeneratenewLSF(root, lsf, variables, verbose=verbose)
+    newlsf = _GeneratenewLSF(root, lsf, variables, verbose=verbose)
     newlsf.write("\ncd('" + fsploc + "');\n")
     newlsf.write("save('" + fspname + "');\n")
 
@@ -228,7 +233,6 @@ def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
     see : http://docs.lumerical.com/en/fdtd/user_guide_run_linux_fdtd_command_line_multi.html
     '''
 
-
     ExecFSP = "fdtd-run-local.sh -n " + \
         str(cores) + ' ' + os.path.join(fsploc, "*.fsp")
 
@@ -240,22 +244,31 @@ def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
     else:
         return ExecFSP
 
-from fabric.api import *
-from fabric.contrib.console import confirm
 
-env.hosts = ['tinker.ee.ucl.ac.uk', 'clemens.ee.ucl.ac.uk', 'sienna.ee.ucl.ac.uk']
+try:
+    from fabric.api import run
 
-def ExecuteFSPfilesRemote(fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
-    '''
-    This will execute all the given fsp files on a remote machine using the
-    _ExecuteFSPfiles_ command above
-    '''
+    def ExecuteFSPfilesRemote(
+            fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
+        '''
+        This will execute all the given fsp files on a remote machine using the
+        _ExecuteFSPfiles_ command above
+        '''
 
-    acmd = "/bin/nice -n {0:.0f} {1}".format(nicelvl,ExecuteFSPfiles(fsploc, cores, execute=False, verbose=verbose))
-    
-    return run(acmd)
+        acmd = "/bin/nice -n {0:.0f} {1}".format(
+            nicelvl,
+            ExecuteFSPfiles(fsploc,
+                            cores,
+                            execute=False,
+                            verbose=verbose))
 
-def ExecuteScriptOnFSP(fsp, script, verbose=0, **kwargs):
+        return run(acmd)
+
+except ImportError:
+    print("Fabric is not found, ignoring ...")
+
+
+def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
     '''
     All fsp files in _fsploc_ are executed with _scriptname_ from _scriptloc_
 
@@ -272,4 +285,7 @@ def ExecuteScriptOnFSP(fsp, script, verbose=0, **kwargs):
     if verbose > 0:
         print(toexec)
 
-    return os.system(toexec)
+    if execute:
+        return os.system(toexec)
+    else:
+        return toexec
