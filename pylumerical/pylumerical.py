@@ -14,7 +14,26 @@ from __future__ import print_function, division
 import itertools
 import os
 from subprocess import check_output
+import datetime
 
+def writedetails(workingdir, keyword, defaultparams, newparams, verbose=0):
+    '''
+    Writes important details to text file within directory
+    '''
+    
+    writedatatofile = open(os.path.join(workingdir,keyword,'README'), 'w')
+    
+    writedatatofile.write("Files generated on {0} at {1}\n".format(datetime.date.today(),datetime.datetime.now()))
+    writedatatofile.write("\n--Default parameters--\n")
+    for key, value in defaultparams.iteritems():
+        writedatatofile.write("{0}={1}\n".format(key,value))
+        
+    writedatatofile.write("\n--Parameter Sweeping over--\n")
+    for name, param in newparams:
+        writedatatofile.write("{0} swept from {1} to {2} in {3} steps\n".format(name,min(param),max(param),len(param)))
+                        
+    
+    writedatatofile.close()
 
 def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, verbose=0):
         
@@ -28,11 +47,14 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
     script : (scriptloc, scriptname) of original FDTD-Solutions lsf script we wish to modify
     execute : should the generated files we executed locally immediately?
     '''
-    lsfloc, fsploc, dataloc = SetupEnvironment(
-        workingdir, keyword, verbose=verbose)
+    lsfloc, fsploc, dataloc = SetupEnvironment(workingdir, keyword, 
+                                                verbose=verbose)
+        
 
-    lsffiles = GenerateParameterSweepDictionary(
-        newparams, defaultparams, verbose=verbose)
+    writedetails(workingdir, keyword, defaultparams, newparams)
+
+    lsffiles = GenerateParameterSweepDictionary(newparams, defaultparams,
+                                                verbose=verbose)
 
     for lsfname, parameters in lsffiles:
         if verbose > 0:
@@ -71,6 +93,28 @@ def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
     else:
         return ExecFSP
 
+def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
+    '''
+    All fsp files in _fsploc_ are executed with _scriptname_ from _scriptloc_
+
+    This code can be used to extract raw data from processed simulations
+    '''
+
+    fsploc, fspname = fsp
+    scriptloc, scriptname = script
+
+    ExecLumerical = kwargs.get('lumerical', 'fdtd-solutions')
+
+    toexec = ExecLumerical + " " + os.path.join(fsploc, fspname) + " -run " +\
+        os.path.join(scriptloc, scriptname) + ".lsf -nw"
+    if verbose > 0:
+        print(toexec)
+
+    if execute:
+        return check_output(toexec, shell=True)
+    else:
+        return toexec
+
 
 try:
     from fabric.api import run
@@ -81,12 +125,9 @@ try:
         _ExecuteFSPfiles_ command above
         '''
 
-        acmd = "/bin/nice -n {0:.0f} {1}".format(
-            nicelvl,
-            ExecuteFSPfiles(fsploc,
-                            cores,
-                            execute=False,
-                            verbose=verbose))
+        acmd = "/bin/nice -n {0:.0f} {1}".format(nicelvl,
+                                ExecuteFSPfiles(fsploc, cores, execute=False,
+                                                verbose=verbose))
 
         return run(acmd)
 
@@ -353,26 +394,3 @@ def GenerateFSPinput(lsf, verbose=0, **kwargs):
         print("calling :", ExecLumerical)
 
     return os.system(ExecLumerical)
-
-
-def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
-    '''
-    All fsp files in _fsploc_ are executed with _scriptname_ from _scriptloc_
-
-    This code can be used to extract raw data from processed simulations
-    '''
-
-    fsploc, fspname = fsp
-    scriptloc, scriptname = script
-
-    ExecLumerical = kwargs.get('lumerical', 'fdtd-solutions')
-
-    toexec = ExecLumerical + " " + os.path.join(fsploc, fspname) + " -run " +\
-        os.path.join(scriptloc, scriptname) + ".lsf -nw"
-    if verbose > 0:
-        print(toexec)
-
-    if execute:
-        return check_output(toexec, shell=True)
-    else:
-        return toexec
