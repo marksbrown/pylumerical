@@ -399,7 +399,7 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
     newlsf.close()
 
 
-def GenerateFSPinput(lsf, verbose=0, **kwargs):
+def GenerateFSPinput(lsf, execute=True, verbose=0, **kwargs):
 
     lsfloc, lsfname = lsf
     gui = kwargs.get('gui', False)
