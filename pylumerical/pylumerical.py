@@ -419,5 +419,8 @@ def GenerateFSPinput(lsf, verbose=0, **kwargs):
     ExecLumerical += arguments
     if verbose > 0:
         print("calling :", ExecLumerical)
-
-    return os.system(ExecLumerical)
+    
+    if execute:
+        return check_output(ExecLumerical, shell=True)
+    else:
+        return ExecLumerical
