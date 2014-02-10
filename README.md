@@ -74,6 +74,7 @@ from numpy import linspace
 
 ##consts
 nm = 1e-9
+verbose = 1
 
 workingdir = '/tmp/lumerical'
 scriptloc = os.path.join(os.getcwd(),'originalscripts')
@@ -87,18 +88,14 @@ newparams = [('MonitorLoc' , [2]),
              ('MarginXY' , linspace(100,200,4)*nm)]
 
 fsploc, outputloc = pyl.ParameterSweepInput(workingdir, 'MarginVary', newparams,
-                     defaultparams, (scriptloc, 'DipoleArray'), verbose=0)
+                     defaultparams, (scriptloc, 'DipoleArray'), verbose=verbose)
 
 print("Input lsf & FSP Generated")
 
-pyl.ExecuteFSPfiles(fsploc, cores=8, verbose=0)
+pyl.ExecuteFSPfiles(fsploc, cores=8, verbose=verbose)
 print("FSP Processed")
 
-scriptparams = {'Monitor' : "PowerMonitor"}
-pyl.ProcessGenerated(fsploc, outputloc, processingloc, 'farfieldsave', scriptparams, verbose=1)
+scriptparams = {'Monitor' : "PowerMonitor"} #optical arguments for processing script
+pyl.ProcessGenerated(fsploc, outputloc, processingloc, 'farfieldsave', scriptparams, verbose=verbose)
 print("Complete!")
-
-
-import pylumerical as pyl
-nm = 1e-9
 ```
