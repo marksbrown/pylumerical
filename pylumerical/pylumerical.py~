@@ -196,15 +196,15 @@ def SetupEnvironment(workingdir, akeyword, verbose=0,delete_existing_files=False
 	print("\nDeleting pre-existing .lsf files")                  
         for existing_file in os.listdir(lsfloc):
             os.remove(os.path.join(lsfloc,existing_file))
-            print(existing_file," DELETED")
+            print(existing_file," deleted")
 	print("\nDeleting pre-existing .fsp files")                  
         for existing_file in os.listdir(fsploc):
             os.remove(os.path.join(fsploc,existing_file))
-            print(existing_file," DELETED")
+            print(existing_file," deleted")
 	print("\nDeleting pre-existing .csv files")                  
         for existing_file in os.listdir(dataloc):
             os.remove(os.path.join(dataloc,existing_file))
-            print(existing_file," DELETED")
+            print(existing_file," deleted")
 	print("\n")
 
     return lsfloc, fsploc, dataloc
