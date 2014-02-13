@@ -15,6 +15,7 @@ import itertools
 import os
 from subprocess import check_output
 import datetime
+import time
 
 def writedetails(workingdir, keyword, defaultparams, newparams, verbose=0):
     '''
@@ -84,7 +85,70 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
 
     return fsploc, dataloc
 
+class LumericalError(Exception):
+     def __init__(self, value):
+         self.value = value
+     def __str__(self):
+         return repr(self.value)
 
+def catchlumericaloutput(execfunc):
+    '''
+    This decorator has two purposes
+    1) Catch errors from Lumerical and stop simulation if the remedying action
+    is not known
+
+    2) pause if all GUI licences are in use. Then rerun a maximum number of 
+    times after a defined time. If the engine licences are all in use, stop
+    simulation
+    '''
+    def checkoutput(*args, **kwargs):
+        
+        verbose = kwargs.get('verbose',0) #defaults to not printing
+        TimeDelay = kwargs.pop('TimeDelay', 10)
+        MaxAttempts = kwargs.pop('MaxAttempts', 10)
+
+        stroutput = execfunc(*args, **kwargs)
+
+        if verbose > 1:
+            print("Output from execution is")
+            print(stroutput)
+
+        #Check number 1
+        firstcheck = "There is no possible parallel processor layout"
+        if stroutput.find(firstcheck) > 0 :
+
+            if verbose > 0:
+                print("No Possible layout, executing again with single core")
+            kwargs['cores'] = 1
+            checkoutput(*args, **kwargs) #attempt to run again
+                
+
+        #Check number 2
+        secondcheck = "Unable to check out a FlexNet license"
+        if stroutput.find(secondcheck) > 0 :
+                       
+            try:
+                kwargs['attemptsmade'] += 1
+            except KeyError:
+                kwargs['attemptsmade'] = 1
+
+            if verbose > 0:
+                print("Lumerical licence not currently available on run {0}".format(kwargs['attemptsmade']))
+            
+            if kwargs['attemptsmade'] > MaxAttempts:
+                if verbose > 0:
+                    raise LumericalError("maximum number of attempts reached, stopping")
+            else:
+                time.sleep(TimeDelay) #waits a reasonable amount of time before attempting again
+                checkoutput(*args, **kwargs) #attempt to run again
+                    
+        
+        return stroutput
+
+    return checkoutput
+
+
+@catchlumericaloutput
 def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
     '''
     Executes all fsp files in _fsploc_
@@ -105,6 +169,7 @@ def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
     else:
         return ExecFSP
 
+@catchlumericaloutput
 def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
     '''
     All fsp files in _fsploc_ are executed with _scriptname_ from _scriptloc_
@@ -131,6 +196,7 @@ def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
 try:
     from fabric.api import run
 
+    @catchlumericaloutput
     def ExecuteFSPfilesRemote(fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
         '''
         This will execute all the given fsp files on a remote machine using the
@@ -398,7 +464,7 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
     newlsf.write("exit(2);\n")
     newlsf.close()
 
-
+@catchlumericaloutput
 def GenerateFSPinput(lsf, execute=True, verbose=0, **kwargs):
 
     lsfloc, lsfname = lsf
