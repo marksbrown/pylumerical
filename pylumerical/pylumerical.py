@@ -17,27 +17,34 @@ from subprocess import check_output
 import datetime
 import time
 
+
 def writedetails(workingdir, keyword, defaultparams, newparams, verbose=0):
     '''
     Writes important details to text file within directory
     '''
-    
-    writedatatofile = open(os.path.join(workingdir,keyword,'README'), 'w')
-    
-    writedatatofile.write("Files generated on {0} at {1}\n".format(datetime.date.today(),datetime.datetime.now()))
+
+    writedatatofile = open(os.path.join(workingdir, keyword, 'README'), 'w')
+
+    writedatatofile.write("Files generated on {0} at {1}\n".format(
+        datetime.date.today(), datetime.datetime.now()))
     writedatatofile.write("\n--Default parameters--\n")
     for key, value in defaultparams.iteritems():
-        writedatatofile.write("{0}={1}\n".format(key,value))
-        
+        writedatatofile.write("{0}={1}\n".format(key, value))
+
     writedatatofile.write("\n--Parameter Sweeping over--\n")
     for name, param in newparams:
-        writedatatofile.write("{0} swept from {1} to {2} in {3} steps\n".format(name,min(param),max(param),len(param)))
-    
+        writedatatofile.write(
+            "{0} swept from {1} to {2} in {3} steps\n".format(name,
+                                                              min(param),
+                                                              max(param),
+                                                              len(param)))
+
     writedatatofile.close()
 
 
-def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, verbose=0, output_simulation_names=False,delete_existing_files=False,show_created_fsp_files=False):
-        
+def ParameterSweepInput(
+    workingdir, keyword, newparams, defaultparams, script, verbose=0,
+        output_simulation_names=False, delete_existing_files=False, show_created_fsp_files=False):
     '''
     Parameter Sweep for FDTD-Solutions
 
@@ -48,7 +55,8 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
     script : (scriptloc, scriptname) of original FDTD-Solutions lsf script we wish to modify
     execute : should the generated files we executed locally immediately?
     '''
-    lsfloc, fsploc, dataloc = SetupEnvironment(workingdir, keyword,verbose=verbose,delete_existing_files=delete_existing_files)
+    lsfloc, fsploc, dataloc = SetupEnvironment(
+        workingdir, keyword, verbose=verbose, delete_existing_files=delete_existing_files)
 
     writedetails(workingdir, keyword, defaultparams, newparams)
 
@@ -57,11 +65,15 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
 
     # Display the number of simulations that will be created
     print("\n")
-    print("Using override dictionary to generate ",len(lsffiles)," simulations:")
-    # I have added this here as using the main verbose variable outputs too much info
-    if output_simulation_names==True:
+    print(
+        "Using override dictionary to generate ",
+        len(lsffiles),
+        " simulations:")
+    # I have added this here as using the main verbose variable outputs too
+    # much info
+    if output_simulation_names == True:
         for lsfname, parameters in lsffiles:
-            print("\t",lsfname)
+            print("\t", lsfname)
 
     for lsfname, parameters in lsffiles:
         if verbose > 0:
@@ -78,22 +90,26 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
                 " is not correct. Check error in input directory.")
 
     if show_created_fsp_files:
-	print("\n")
+        print("\n")
         print("Created (.lsf directory):")
         for created_file in os.listdir(lsfloc):
-            print("\t",created_file)
+            print("\t", created_file)
         print("Created (.fsp directory):")
         for created_file in os.listdir(fsploc):
             if created_file.endswith(".fsp"):
-                print("\t",created_file)
+                print("\t", created_file)
 
     return fsploc, dataloc
 
+
 class LumericalError(Exception):
-     def __init__(self, value):
-         self.value = value
-     def __str__(self):
-         return repr(self.value)
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
 
 def catchlumericaloutput(execfunc):
     '''
@@ -101,13 +117,13 @@ def catchlumericaloutput(execfunc):
     1) Catch errors from Lumerical and stop simulation if the remedying action
     is not known
 
-    2) pause if all GUI licences are in use. Then rerun a maximum number of 
+    2) pause if all GUI licences are in use. Then rerun a maximum number of
     times after a defined time. If the engine licences are all in use, stop
     simulation
     '''
     def checkoutput(*args, **kwargs):
-        
-        verbose = kwargs.get('verbose',0) #defaults to not printing
+
+        verbose = kwargs.get('verbose', 0)  # defaults to not printing
         TimeDelay = kwargs.pop('TimeDelay', 10)
         MaxAttempts = kwargs.pop('MaxAttempts', 10)
 
@@ -117,36 +133,37 @@ def catchlumericaloutput(execfunc):
             print("Output from execution is")
             print(stroutput)
 
-        #Check number 1
+        # Check number 1
         firstcheck = "There is no possible parallel processor layout"
-        if stroutput.find(firstcheck) > 0 :
+        if stroutput.find(firstcheck) > 0:
 
             if verbose > 0:
                 print("No Possible layout, executing again with single core")
             kwargs['cores'] = 1
-            checkoutput(*args, **kwargs) #attempt to run again
-                
+            checkoutput(*args, **kwargs)  # attempt to run again
 
-        #Check number 2
+        # Check number 2
         secondcheck = "Unable to check out a FlexNet license"
-        if stroutput.find(secondcheck) > 0 :
-                       
+        if stroutput.find(secondcheck) > 0:
+
             try:
                 kwargs['attemptsmade'] += 1
             except KeyError:
                 kwargs['attemptsmade'] = 1
 
             if verbose > 0:
-                print("Lumerical licence not currently available on run {0}".format(kwargs['attemptsmade']))
-            
+                print(
+                    "Lumerical licence not currently available on run {0}".format(kwargs['attemptsmade']))
+
             if kwargs['attemptsmade'] > MaxAttempts:
                 if verbose > 0:
-                    raise LumericalError("maximum number of attempts reached, stopping")
+                    raise LumericalError(
+                        "maximum number of attempts reached, stopping")
             else:
-                time.sleep(TimeDelay) #waits a reasonable amount of time before attempting again
-                checkoutput(*args, **kwargs) #attempt to run again
-                    
-        
+                # waits a reasonable amount of time before attempting again
+                time.sleep(TimeDelay)
+                checkoutput(*args, **kwargs)  # attempt to run again
+
         return stroutput
 
     return checkoutput
@@ -172,6 +189,7 @@ def ExecuteFSPfiles(fsploc, cores=8, execute=True, verbose=0):
         return check_output(ExecFSP, shell=True)
     else:
         return ExecFSP
+
 
 @catchlumericaloutput
 def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
@@ -201,15 +219,17 @@ try:
     from fabric.api import run
 
     @catchlumericaloutput
-    def ExecuteFSPfilesRemote(fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
+    def ExecuteFSPfilesRemote(
+            fsploc, loc='tinker.ee.ucl.ac.uk', cores=8, nicelvl=-19, verbose=0):
         '''
         This will execute all the given fsp files on a remote machine using the
         _ExecuteFSPfiles_ command above
         '''
 
         acmd = "/bin/nice -n {0:.0f} {1}".format(nicelvl,
-                                ExecuteFSPfiles(fsploc, cores, execute=False,
-                                                verbose=verbose))
+                                                 ExecuteFSPfiles(
+                                                     fsploc, cores, execute=False,
+                                                     verbose=verbose))
 
         return run(acmd)
 
@@ -253,7 +273,8 @@ def ProcessGenerated(fsploc, outputloc, processingloc,
             print(fspname, "returns with code", Success)
 
 
-def SetupEnvironment(workingdir, akeyword, verbose=0,delete_existing_files=False):
+def SetupEnvironment(
+        workingdir, akeyword, verbose=0, delete_existing_files=False):
     '''
     Creates input, processing and output folders
     '''
@@ -264,11 +285,11 @@ def SetupEnvironment(workingdir, akeyword, verbose=0,delete_existing_files=False
 
     if delete_existing_files:
         print("\n")
-	print("Deleting pre-existing files in: .lsf, .fsp and .csv directories:")
-	for directory in [lsfloc, fsploc, dataloc]:
+        print("Deleting pre-existing files in: .lsf, .fsp and .csv directories:")
+        for directory in [lsfloc, fsploc, dataloc]:
             for existing_file in os.listdir(directory):
-                os.remove(os.path.join(directory,existing_file))
-                print("\t",existing_file," DELETED")
+                os.remove(os.path.join(directory, existing_file))
+                print("\t", existing_file, " DELETED")
 
     return lsfloc, fsploc, dataloc
 
@@ -461,6 +482,7 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
     newlsf.write("exit(2);\n")
     newlsf.close()
 
+
 @catchlumericaloutput
 def GenerateFSPinput(lsf, execute=True, verbose=0, **kwargs):
 
@@ -482,7 +504,7 @@ def GenerateFSPinput(lsf, execute=True, verbose=0, **kwargs):
     ExecLumerical += arguments
     if verbose > 0:
         print("calling :", ExecLumerical)
-    
+
     if execute:
         return check_output(ExecLumerical, shell=True)
     else:
