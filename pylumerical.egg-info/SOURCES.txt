@@ -1,8 +1,0 @@
-setup.py
-pylumerical/__init__.py
-pylumerical/processingoutput.py
-pylumerical/pylumerical.py
-pylumerical.egg-info/PKG-INFO
-pylumerical.egg-info/SOURCES.txt
-pylumerical.egg-info/dependency_links.txt
-pylumerical.egg-info/top_level.txt
