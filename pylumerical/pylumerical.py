@@ -55,11 +55,12 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
                                                 verbose=verbose)
 
     # Display the number of simulations that will be created
-    print("Generating "+str(len(lsffiles))+" simulations...")
+    print("\n")
+    print("Using override dictionary to generate ",len(lsffiles)," simulations:")
     # I have added this here as using the main verbose variable outputs too much info
     if output_simulation_names==True:
         for lsfname, parameters in lsffiles:
-            print(lsfname)
+            print("\t",lsfname)
 
     for lsfname, parameters in lsffiles:
         if verbose > 0:
@@ -76,11 +77,14 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
                 " is not correct. Check error in input directory.")
 
     if show_created_fsp_files:
-        print("\nCreated:")
+	print("\n")
+        print("Created (.lsf directory):")
+        for created_file in os.listdir(lsfloc):
+            print("\t",created_file)
+        print("Created (.fsp directory):")
         for created_file in os.listdir(fsploc):
             if created_file.endswith(".fsp"):
-                print(created_file)
-        print("\n")
+                print("\t",created_file)
 
     return fsploc, dataloc
 
@@ -193,19 +197,12 @@ def SetupEnvironment(workingdir, akeyword, verbose=0,delete_existing_files=False
     dataloc = full(workingdir, keyword('output'), verbose=verbose)  # output
 
     if delete_existing_files:
-	print("\nDeleting pre-existing .lsf files")                  
-        for existing_file in os.listdir(lsfloc):
-            os.remove(os.path.join(lsfloc,existing_file))
-            print(existing_file," DELETED")
-	print("\nDeleting pre-existing .fsp files")                  
-        for existing_file in os.listdir(fsploc):
-            os.remove(os.path.join(fsploc,existing_file))
-            print(existing_file," DELETED")
-	print("\nDeleting pre-existing .csv files")                  
-        for existing_file in os.listdir(dataloc):
-            os.remove(os.path.join(dataloc,existing_file))
-            print(existing_file," DELETED")
-	print("\n")
+        print("\n")
+	print("Deleting pre-existing files in: .lsf, .fsp and .csv directories:")
+	for directory in [lsfloc, fsploc, dataloc]:
+            for existing_file in os.listdir(directory):
+                os.remove(os.path.join(directory,existing_file))
+                print("\t",existing_file," DELETED")
 
     return lsfloc, fsploc, dataloc
 
