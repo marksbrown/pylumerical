@@ -42,9 +42,7 @@ def writedetails(workingdir, keyword, defaultparams, newparams, verbose=0):
     writedatatofile.close()
 
 
-def ParameterSweepInput(
-    workingdir, keyword, newparams, defaultparams, script, verbose=0,
-        output_simulation_names=False, delete_existing_files=False, show_created_fsp_files=False):
+def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, verbose=0, **kwargs):
     '''
     Parameter Sweep for FDTD-Solutions
 
@@ -53,45 +51,44 @@ def ParameterSweepInput(
     newparams : list of parameters (see _GenerateParameterSweepDict_ function) we wish to iterate over
     defaultparmas : default dictionary of every parameter needed
     script : (scriptloc, scriptname) of original FDTD-Solutions lsf script we wish to modify
-    execute : should the generated files we executed locally immediately?
+    verbose : verbosity control (0: print nothing, 1: print key points, 2: print all)
     '''
-    lsfloc, fsploc, dataloc = SetupEnvironment(
-        workingdir, keyword, verbose=verbose, delete_existing_files=delete_existing_files)
+    
+
+    ##Verbosity modifiers
+    output_simulation_names = kwargs.get('output_simulation_names',False)
+    delete_existing_files = kwargs.get('delete_existing_files', False)
+    show_created_fsp_files= kwargs.get('show_created_fsp_files', False)
+    
+        
+
+    lsfloc, fsploc, dataloc = SetupEnvironment(workingdir, keyword, 
+                    verbose=verbose, delete_existing_files=delete_existing_files)
 
     writedetails(workingdir, keyword, defaultparams, newparams)
 
     lsffiles = GenerateParameterSweepDictionary(newparams, defaultparams,
                                                 verbose=verbose)
-
-    # Display the number of simulations that will be created
-    print("\n")
-    print(
-        "Using override dictionary to generate ",
-        len(lsffiles),
-        " simulations:")
-    # I have added this here as using the main verbose variable outputs too
-    # much info
-    if output_simulation_names == True:
-        for lsfname, parameters in lsffiles:
-            print("\t", lsfname)
-
+    
+    if verbose > 0:
+        print("\nUsing override dictionary to generate ", len(lsffiles), " simulations:")
+    
     for lsfname, parameters in lsffiles:
         if verbose > 0:
-            print(lsfname)
+            if output_simulation_names == True:
+                for lsfname, parameters in lsffiles:
+                    print(lsfname, sep="\t")
+
         lsf = (lsfloc, lsfname)
         fsp = (fsploc, lsfname)
         GenerateLSFinput(script, lsf, fsp, parameters, verbose=verbose)
         GenerateFSPinput(lsf, verbose=verbose)
 
         if any([afile.endswith('xml') for afile in os.listdir(lsfloc)]):
-            raise ValueError(
-                "lsf file : " +
-                lsfname +
-                " is not correct. Check error in input directory.")
+            raise ValueError("lsf file : " + lsfname + " is not correct. Check error in input directory.")
 
-    if show_created_fsp_files:
-        print("\n")
-        print("Created (.lsf directory):")
+    if (verbose > 0) and show_created_fsp_files:
+        print("\nCreated (.lsf directory):")
         for created_file in os.listdir(lsfloc):
             print("\t", created_file)
         print("Created (.fsp directory):")
