@@ -135,12 +135,14 @@ def catchlumericaloutput(execfunc):
     simulation
     '''
     def checkoutput(*args, **kwargs):
-
-        verbose = kwargs.get('verbose', 0)  # defaults to not printing
-        TimeDelay = kwargs.pop('TimeDelay', 10)
+        '''
+        Catches Lumerical FDTD-Solutions in the act of complaining
+        '''
+        verbose = kwargs.get('verbose', 0)  
+        TimeDelay = kwargs.pop('TimeDelay', 10) #seconds
         MaxAttempts = kwargs.pop('MaxAttempts', 10)
 
-        stroutput = execfunc(*args, **kwargs)
+        stroutput = execfunc(*args, **kwargs) #output to be validated
 
         if verbose > 1:
             print("Output from execution is")
@@ -168,7 +170,7 @@ def catchlumericaloutput(execfunc):
                 print(
                     "Lumerical licence not currently available on run {0}".format(kwargs['attemptsmade']))
 
-            if kwargs['attemptsmade'] > MaxAttempts:
+            if kwargs['attemptsmade'] > MaxAttempts: #do not pass go, do not collect £200
                 if verbose > 0:
                     raise LumericalError(
                         "maximum number of attempts reached, stopping")
@@ -227,6 +229,32 @@ def ExecuteScriptOnFSP(fsp, script, execute=True, verbose=0, **kwargs):
     else:
         return toexec
 
+@catchlumericaloutput
+def GenerateFSPinput(lsf, execute=True, verbose=0, **kwargs):
+
+    lsfloc, lsfname = lsf
+    gui = kwargs.get('gui', False)
+    run = kwargs.get('run', True)
+    logfile = kwargs.get('logfile', False)
+
+    ExecLumerical = kwargs.get('lumerical', 'fdtd-solutions')
+    arguments = ""
+    if not gui:
+        arguments += ' -nw'
+    if logfile:
+        arguments += ' -logfile logFile'
+    if run:
+        arguments += ' -run'
+
+    arguments += " " + os.path.join(lsfloc, lsfname + '.lsf')
+    ExecLumerical += arguments
+    if verbose > 0:
+        print("calling :", ExecLumerical)
+
+    if execute:
+        return check_output(ExecLumerical, shell=True)
+    else:
+        return ExecLumerical
 
 try:
     from fabric.api import run
@@ -496,31 +524,3 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0, **kwargs):
 
     newlsf.write("exit(2);\n")
     newlsf.close()
-
-
-@catchlumericaloutput
-def GenerateFSPinput(lsf, execute=True, verbose=0, **kwargs):
-
-    lsfloc, lsfname = lsf
-    gui = kwargs.get('gui', False)
-    run = kwargs.get('run', True)
-    logfile = kwargs.get('logfile', False)
-
-    ExecLumerical = kwargs.get('lumerical', 'fdtd-solutions')
-    arguments = ""
-    if not gui:
-        arguments += ' -nw'
-    if logfile:
-        arguments += ' -logfile logFile'
-    if run:
-        arguments += ' -run'
-
-    arguments += " " + os.path.join(lsfloc, lsfname + '.lsf')
-    ExecLumerical += arguments
-    if verbose > 0:
-        print("calling :", ExecLumerical)
-
-    if execute:
-        return check_output(ExecLumerical, shell=True)
-    else:
-        return ExecLumerical
