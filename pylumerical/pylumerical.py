@@ -45,23 +45,36 @@ def writedetails(workingdir, keyword, defaultparams, newparams, verbose=0):
 def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, verbose=0, **kwargs):
     '''
     Parameter Sweep for FDTD-Solutions
-
+    
+    Required Parameters
+    -------------------
     workingdir : location to place input, fsp and output folders
     keyword : identifier of parameter sweep for you convenience
     newparams : list of parameters (see _GenerateParameterSweepDict_ function) we wish to iterate over
     defaultparmas : default dictionary of every parameter needed
     script : (scriptloc, scriptname) of original FDTD-Solutions lsf script we wish to modify
-    verbose : verbosity control (0: print nothing, 1: print key points, 2: print all)
+
+    Optional Parameters
+    -------------------
+    delete_existing_files (False)   : (WARNING!) This will delete all existing files within directory
+    generate_movie_of_setup (False) : generate movie using the Lumerical orbit command
+        moviefsp (60) : frames per second passed to Orbit();
+        moviezoom (1) : zoom factor passed to Orbit();
+
+    Verbosity Controls
+    ------------------
+    verbose (0) : verbosity control (0: print nothing, 1: print key points, 2: print all)
+    output_simulation_names (False) : list all .lsf files created
+    show_created_fsp_files (False)  : list all .lsf and .fsp files *present*
     '''
     
 
     ##Verbosity modifiers
     output_simulation_names = kwargs.get('output_simulation_names',False)
     delete_existing_files = kwargs.get('delete_existing_files', False)
-    show_created_fsp_files= kwargs.get('show_created_fsp_files', False)
+    show_created_fsp_files = kwargs.get('show_created_fsp_files', False)
     
-        
-
+    
     lsfloc, fsploc, dataloc = SetupEnvironment(workingdir, keyword, 
                     verbose=verbose, delete_existing_files=delete_existing_files)
 
@@ -74,14 +87,13 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
         print("\nUsing override dictionary to generate ", len(lsffiles), " simulations:")
     
     for lsfname, parameters in lsffiles:
-        if verbose > 0:
-            if output_simulation_names == True:
-                for lsfname, parameters in lsffiles:
-                    print(lsfname, sep="\t")
+        if (verbose > 0) and output_simulation_names:
+            for lsfname, parameters in lsffiles:
+                print(lsfname, sep="\t")
 
         lsf = (lsfloc, lsfname)
         fsp = (fsploc, lsfname)
-        GenerateLSFinput(script, lsf, fsp, parameters, verbose=verbose)
+        GenerateLSFinput(script, lsf, fsp, parameters, verbose=verbose, **kwargs)
         GenerateFSPinput(lsf, verbose=verbose)
 
         if any([afile.endswith('xml') for afile in os.listdir(lsfloc)]):
@@ -253,7 +265,6 @@ def ProcessGenerated(fsploc, outputloc, processingloc,
             print(variables)
 
         # cuts off .fsp from filename
-        fullpath = os.path.join(fsploc, fspname.split('.')[0])
         tmpscript = (processingloc, 'TemporaryScript')
 
         AlterVariables(
@@ -445,7 +456,7 @@ def AlterVariables(root, lsf, variables, verbose=0):
     newlsf.close()
 
 
-def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
+def GenerateLSFinput(root, lsf, fsp, variables, verbose=0, **kwargs):
     '''
     Generates new lsf file in _lsfloc_ with name _lsfname_ using the original
     script file _rootname_ from _rootloc_ with additional _variables_
@@ -456,6 +467,10 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
     lsfloc, lsfname = lsf
     rootloc, rootname = root
     fsploc, fspname = fsp
+
+    moviefps = kwargs.get('moviefps', 60);
+    moviezoom = kwargs.get('moviezoom', 1);  
+
     #scriptloc, scriptname = script
 
     if not os.path.exists(rootloc):
@@ -470,12 +485,11 @@ def GenerateLSFinput(root, lsf, fsp, variables, verbose=0):
     newlsf.write("\ncd('" + fsploc + "');\n")
     newlsf.write("save('" + fspname + "');\n")
 
-#    if len(scriptloc) > 0:
-#        print(scriptloc, scriptname)
-#        fullloc = os.path.join(scriptloc, scriptname)
-#        newlsf.write("if(layoutmode==0){\n")
-#        newlsf.write("feval('" + fullloc + "');\n")
-#        newlsf.write("}\n")
+    if kwargs.get('generate_movie_of_setup', False):
+        newlsf.write('select("FDTD");\n')
+        newlsf.write('setview("extent");\n')
+        newlsf.write("orbit("'{0}, {1}, "{2}");\n'.format(moviezoom, moviefps, lsfname+"_input"))
+
     newlsf.write("exit(2);\n")
     newlsf.close()
 
