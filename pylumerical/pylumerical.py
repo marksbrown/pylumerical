@@ -112,7 +112,11 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
 
 
 class LumericalError(Exception):
-
+    '''
+    Whenever Lumerical FDTD-Solutions throws a (known) wobbler that we cannot
+    solve, this error will be raised. Unknown errors cannot be caught as there
+    is no known list of errors to compare to (fun right?!)
+    '''
     def __init__(self, value):
         self.value = value
 
@@ -419,7 +423,7 @@ def _GeneratenewLSF(root, lsf, variables, verbose=0):
             newlsf.write(aline)
             continue
 
-        if verbose > 0:
+        if verbose > 1:
             print("line : variable : new line")
         for j, akey in enumerate(variables):
             if isinstance(variables[akey], bool):  # Type casts for Lumerical
