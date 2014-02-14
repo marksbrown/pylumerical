@@ -170,7 +170,7 @@ def catchlumericaloutput(execfunc):
                 print(
                     "Lumerical licence not currently available on run {0}".format(kwargs['attemptsmade']))
 
-            if kwargs['attemptsmade'] > MaxAttempts: #do not pass go, do not collect £200
+            if kwargs['attemptsmade'] > MaxAttempts: #do not pass go, do not collect 200
                 if verbose > 0:
                     raise LumericalError(
                         "maximum number of attempts reached, stopping")
