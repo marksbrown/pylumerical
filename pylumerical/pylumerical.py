@@ -126,7 +126,10 @@ class LumericalError(Exception):
 
 def catchlumericaloutput(execfunc):
     '''
-    This decorator has two purposes
+    This decorator has three purposes :
+    
+    0) Return any errors thrown if the lsf script is invalid and return to the user
+
     1) Catch errors from Lumerical and stop simulation if the remedying action
     is not known
 
@@ -147,6 +150,12 @@ def catchlumericaloutput(execfunc):
         if verbose > 1:
             print("Output from execution is")
             print(stroutput)
+
+        # Check number 0
+        zerothcheck = "Error: "
+        if stroutput.find(zerothcheck) > 0:
+            raise LumericalError("lsf script is invalid!\n\n"+stroutput)
+        
 
         # Check number 1
         firstcheck = "There is no possible parallel processor layout"
