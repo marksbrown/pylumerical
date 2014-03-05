@@ -12,6 +12,7 @@
 
 from __future__ import print_function, division
 import itertools
+from collections import Iterable
 import os
 from subprocess import check_output
 import datetime
@@ -77,6 +78,15 @@ def ParameterSweepInput(workingdir, keyword, newparams, defaultparams, script, v
     
     lsfloc, fsploc, dataloc = SetupEnvironment(workingdir, keyword, 
                     verbose=verbose, delete_existing_files=delete_existing_files)
+
+
+    ##This list comprehension will wrap any single parameters given INCLUDING
+    ##strings to ensure we don't mess about too much!
+    newparams = [(parametername, [parameter]) 
+             if not isinstance(parameter, Iterable) or isinstance(parameter, str) 
+             else (parametername, parameter) for parametername, parameter in newparams]
+    
+
 
     writedetails(workingdir, keyword, defaultparams, newparams)
 
@@ -362,12 +372,11 @@ def GenerateParameterSweepDictionary(newparams, defaultparams, verbose=0):
     newparms should have have format [(parameter_name1, values1),(parameter_name2, values2),...]
     '''
     names, parameters = zip(*newparams)
-    newparamdict = [dict(zip(names, item))
+    
+    newparamdict = [dict(zip(names, item)) 
                     for item in itertools.product(*parameters)]
-
-    return (
-        [lsftogenerate(override, defaultparams) for override in newparamdict]
-    )
+    
+    return ([lsftogenerate(override, defaultparams) for override in newparamdict])
 
 
 def _uniquedictstring(adict):
